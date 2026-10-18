@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="es">
+<head><meta charset="utf-8"><title>Catálogo | TiendaUT</title></head>
+<body>
+  <main>
+    <h1>Catálogo</h1>
+    <p>Carrito: <span data-testid="contador-carrito">0</span> productos</p>
+    <label for="buscar">Buscar producto</label>
+    <input placeholder="Buscar producto" id="buscar">
+    <button id="vaciar">Vaciar carrito</button>
+    <img src="/logo.svg" alt="Logo de TiendaUT" width="120" height="40">
+    <ul id="lista"><li>Cargando...</li></ul>
+  </main>
+  <script>
+    let carrito = 0;
+    const lista = document.getElementById('lista');
+    const contador = document.querySelector('[data-testid="contador-carrito"]');
+    const buscar = document.getElementById('buscar');
+    let productos = [];
+
+    function pintar(filtro = '') {
+      lista.innerHTML = '';
+      productos
+        .filter(p => p.nombre.toLowerCase().includes(filtro.toLowerCase()))
+        .forEach(p => {
+          const li = document.createElement('li');
+          li.dataset.testid = 'producto';
+          const titulo = document.createElement('h2');
+          titulo.textContent = p.nombre;
+          const precio = document.createElement('span');
+          precio.textContent = `$${p.precio}`;
+          const boton = document.createElement('button');
+          boton.textContent = 'Agregar al carrito';
+          boton.addEventListener('click', () => {
+            carrito++;
+            contador.textContent = String(carrito);
+          });
+          li.append(titulo, precio, boton);
+          lista.appendChild(li);
+        });
+    }
+
+    fetch('/api/productos')
+      .then(r => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      })
+      .then(data => {
+        productos = data;
+        // Aplicar el filtro que el usuario escribió mientras llegaba la API.
+        pintar(buscar.value);
+      })
+      .catch(() => {
+        lista.replaceChildren();
+        const aviso = document.createElement('li');
+        aviso.textContent = 'No pudimos cargar los productos';
+        lista.appendChild(aviso);
+      });
+
+    buscar.addEventListener('input', e => pintar(e.target.value));
+    document.getElementById('vaciar').addEventListener('click', () => {
+      carrito = 0;
+      contador.textContent = '0';
+    });
+  </script>
+</body>
+</html>
